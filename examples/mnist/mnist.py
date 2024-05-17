@@ -36,15 +36,15 @@ The model was trained using the following parameters:
 
 ## Training and Validation Statistics
 
-The final training accuracy was {train_acc}%, and the final validation accuracy was {test_acc}%.
+The final training accuracy was {train_acc:.2f}%, and the final validation accuracy was {test_acc:.2f}%.
 
 The loss decreased steadily over the training process, as shown in the following graph:
 
-![Loss Graph](path_to_loss_graph.png)
+![Loss Graph](saved_models/loss_graph.png)
 
 The accuracy increased over the training process, as shown in the following graph:
 
-![Accuracy Graph](path_to_accuracy_graph.png)
+![Accuracy Graph](saved_models/accuracy_graph.png)
 """
 
 model_path = 'model.pkl'
@@ -132,12 +132,6 @@ def train_new_model(epochs=100, batch_size=256, print_freq=10):
 
     gather_stats_and_save(model)
 
-    # plt.plot(model.losses)
-
-    # save_model(model)
-
-    # return model
-
 def resume_training(model, n_samples=60000, epochs=100, batch_size=256, print_freq=10):
     n_samples = 60000
 
@@ -148,23 +142,30 @@ def resume_training(model, n_samples=60000, epochs=100, batch_size=256, print_fr
 
     gather_stats_and_save(model)
 
-    # test_acc = model.test(test_images, np.eye(10)[test_labels])
-    # train_acc = model.test(train_images, np.eye(10)[train_labels])
-
-    # print(f"Test accuracy: {test_acc}")
-    # print(f"Train accuracy: {train_acc}")
-    # plt.plot(model.losses)
-    # save_model(model)
-    # return model
-
-def save_model(model, doc_string=None, doc_path=None):
+def save_model(model, doc_string=None, doc_path=None, loss_history=None, acc_history=None):
     final_path = get_final_path(model_path)
     with open(final_path, 'wb') as f:
         pickle.dump(model, f)
     print("Saved model to disk.", final_path)
 
+    if loss_history:
+        plt.plot(loss_history)
+        plt.ylabel('Loss')
+        plt.xlabel('Epochs')
+        plt.title('Loss Graph')
+        plt.savefig(get_final_path("loss_graph.png"))
+        plt.close()
+    
+    if acc_history:
+        plt.plot(acc_history)
+        plt.ylabel('Accuracy')
+        plt.xlabel('Epochs')
+        plt.title('Accuracy Graph')
+        plt.savefig(get_final_path("accuracy_graph.png"))
+        plt.close()
+
     if doc_string and doc_path:
-        with open(doc_path, 'a') as f:
+        with open(doc_path, 'w') as f:
             f.write(doc_string)
         print("Saved documentation to disk.", doc_path)
 
@@ -176,23 +177,32 @@ def gather_stats_and_save(model):
     test_data = test_images[:10000].astype(np.float32)
     test_labels = test_labels[:10000]
 
-    train_acc = model.test(train_data, np.eye(10)[train_labels])
-    test_acc = model.test(test_data, np.eye(10)[test_labels])
+    train_acc = model.test(train_data, np.eye(10)[train_labels]) * 100
+    test_acc = model.test(test_data, np.eye(10)[test_labels]) * 100
 
-    print(f"Train accuracy: {train_acc}")
-    print(f"Test accuracy: {test_acc}")
+
+    print(f"Train accuracy: {train_acc}%")
+    print(f"Test accuracy: {test_acc}%")
 
     lr = model.get_lr()
     batch_size = model.get_batch_size()
     epochs = model.get_epochs()
     name = model.get_name()
 
+    loss_history = model.get_loss_history()
+    acc_history = model.get_acc_history()
+
+    # length of loss should be equal to number of epochs
+    step = len(loss_history) // epochs
+    loss_history = [loss_history[i] for i in range(0, len(loss_history), step)]
+    acc_history = [acc_history[i] for i in range(0, len(acc_history), step)]
+
+
     final_string = doc_template.format(epochs=epochs, batch_size=batch_size, learning_rate=lr, train_acc=train_acc, test_acc=test_acc)
 
-    final_path = get_final_path(name + ".pkl")
     documentation_path = os.path.join("examples", "mnist", "readme.md")
 
-    save_model(model, doc_string=final_string, doc_path=documentation_path)
+    save_model(model, doc_string=final_string, doc_path=documentation_path, loss_history=loss_history, acc_history=acc_history)
 
 if __name__ == '__main__':
     main()
