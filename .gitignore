@@ -179,3 +179,4 @@
 data/
 examples/mnist/saved_models/
 *.pkl
+!examples/mnist/saved_models/*.png
