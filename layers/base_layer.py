@@ -8,7 +8,7 @@ class Layer(ABC):
     def forward(self, inputs):
         pass
     @abstractmethod
-    def backward(self, outputs):
+    def backward(self, outputs, lr=0.01):
         pass
 
     def set_dtype(self, dtype):

@@ -8,6 +8,10 @@ class Model(ABC):
     def __init__(self, loss_fn=None):
         self.loss_fn = loss_fn
         self.dtype = np.float64
+        self.batch_size = 256
+        self.lr = 0.01
+        self.epochs = 100
+        self.name = "model"
         self.layers = []
 
     def add(self, layer):
@@ -33,6 +37,31 @@ class Model(ABC):
     
     def get_num_params(self):
         return sum([layer.get_num_params() for layer in self.layers])
+    
+    def save_hyperparameters(self, **kwargs):
+        if 'batch_size' in kwargs:
+            self.batch_size = kwargs['batch_size']
+        
+        if 'lr' in kwargs:
+            self.lr = kwargs['lr']
+        
+        if 'epochs' in kwargs:
+            self.epochs = kwargs['epochs']
+        
+        if 'name' in kwargs:
+            self.name = kwargs['name']
+        
+    def get_lr(self):
+        return self.lr
+    
+    def get_batch_size(self):
+        return self.batch_size
+    
+    def get_epochs(self):
+        return self.epochs
+    
+    def get_name(self):
+        return self.name
 
     @abstractmethod
     def backward(self, inpt):

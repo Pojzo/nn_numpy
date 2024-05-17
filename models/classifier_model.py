@@ -19,7 +19,7 @@ class ClassifierModel(Model):
     Overrides the backward method of the Model class
     Computes the loss and accuracy, and backpropagates the gradients
     """
-    def backward(self, one_hot_target, target_argmax):
+    def backward(self, one_hot_target, target_argmax, lr=0.01):
         pred = self.layers[-1].output
         loss = self.loss_fn(pred, one_hot_target)
 
@@ -27,7 +27,7 @@ class ClassifierModel(Model):
 
         dl_dx = d_loss
         for layer in self.layers[::-1]:
-            dl_dx, _, _ = layer.backward(dl_dx)
+            dl_dx, _, _ = layer.backward(dl_dx, lr=lr)
 
         if self.losses is not None:
             self.losses.append(np.mean(loss))
@@ -58,7 +58,8 @@ class ClassifierModel(Model):
     """
     Train the model on the given data.
     """
-    def train(self, data_x, data_y, epochs=100, batch_size=32, print_freq=10):
+    def train(self, data_x, data_y, epochs=100, batch_size=32, print_freq=10, lr=0.01):
+        super().save_hyperparameters(batch_size=batch_size, lr=lr, epochs=epochs)
         start_time = time.time()
 
         one_hot_target = np.eye(10)[data_y]
@@ -78,7 +79,7 @@ class ClassifierModel(Model):
 
                 output= self.forward(batch_x)
 
-                loss, acc = self.backward(batch_y, data_y[batch_start:batch_end])
+                loss, acc = self.backward(batch_y, data_y[batch_start:batch_end], lr=lr)
                 epoch_loss += loss.sum()
                 epoch_acc += [acc]            
             # Average loss for the epoch

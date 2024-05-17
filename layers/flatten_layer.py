@@ -11,5 +11,5 @@ class Flatten(Layer):
 
         return np.reshape(inpt, (batch_size, inpt.shape[1] * inpt.shape[2]))
 
-    def backward(self, d_next):
+    def backward(self, d_next, **kwargs):
         return d_next, 0, 0

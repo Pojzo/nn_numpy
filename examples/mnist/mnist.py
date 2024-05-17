@@ -23,6 +23,30 @@ import os
 
 get_final_path = lambda x: os.path.join("examples", "mnist", "saved_models", x)
 
+doc_template = """
+# Model Training Report
+
+## Training
+
+The model was trained using the following parameters:
+
+- Epochs: {epochs}
+- Batch size: {batch_size}
+- Learning rate: {learning_rate}
+
+## Training and Validation Statistics
+
+The final training accuracy was {train_acc}%, and the final validation accuracy was {test_acc}%.
+
+The loss decreased steadily over the training process, as shown in the following graph:
+
+![Loss Graph](path_to_loss_graph.png)
+
+The accuracy increased over the training process, as shown in the following graph:
+
+![Accuracy Graph](path_to_accuracy_graph.png)
+"""
+
 model_path = 'model.pkl'
 
 def load_model():
@@ -105,30 +129,70 @@ def train_new_model(epochs=100, batch_size=256, print_freq=10):
     data_y = train_labels[:n_samples]
 
     model.train(data_x, data_y, batch_size=batch_size, epochs=epochs, print_freq=print_freq)
-    plt.plot(model.losses)
 
-    save_model(model)
+    gather_stats_and_save(model)
 
-    return model
+    # plt.plot(model.losses)
+
+    # save_model(model)
+
+    # return model
 
 def resume_training(model, n_samples=60000, epochs=100, batch_size=256, print_freq=10):
     n_samples = 60000
+
     data_x = train_images[:n_samples]
     data_y = train_labels[:n_samples]
-    model.train(data_x, data_y, batch_size=batch_size, epochs=epochs, print_freq=print_freq)
-    test_acc = model.test(test_images, np.eye(10)[test_labels])
-    train_acc = model.test(train_images, np.eye(10)[train_labels])
-    print(f"Test accuracy: {test_acc}")
-    print(f"Train accuracy: {train_acc}")
-    plt.plot(model.losses)
-    save_model(model)
-    return model
 
-def save_model(model):
+    model.train(data_x, data_y, batch_size=batch_size, epochs=epochs, print_freq=print_freq)
+
+    gather_stats_and_save(model)
+
+    # test_acc = model.test(test_images, np.eye(10)[test_labels])
+    # train_acc = model.test(train_images, np.eye(10)[train_labels])
+
+    # print(f"Test accuracy: {test_acc}")
+    # print(f"Train accuracy: {train_acc}")
+    # plt.plot(model.losses)
+    # save_model(model)
+    # return model
+
+def save_model(model, doc_string=None, doc_path=None):
     final_path = get_final_path(model_path)
     with open(final_path, 'wb') as f:
         pickle.dump(model, f)
     print("Saved model to disk.", final_path)
+
+    if doc_string and doc_path:
+        with open(doc_path, 'a') as f:
+            f.write(doc_string)
+        print("Saved documentation to disk.", doc_path)
+
+def gather_stats_and_save(model):
+    global train_images, train_labels, test_images, test_labels
+    train_data = train_images[:60000].astype(np.float32)
+    train_labels = train_labels[:60000]
+
+    test_data = test_images[:10000].astype(np.float32)
+    test_labels = test_labels[:10000]
+
+    train_acc = model.test(train_data, np.eye(10)[train_labels])
+    test_acc = model.test(test_data, np.eye(10)[test_labels])
+
+    print(f"Train accuracy: {train_acc}")
+    print(f"Test accuracy: {test_acc}")
+
+    lr = model.get_lr()
+    batch_size = model.get_batch_size()
+    epochs = model.get_epochs()
+    name = model.get_name()
+
+    final_string = doc_template.format(epochs=epochs, batch_size=batch_size, learning_rate=lr, train_acc=train_acc, test_acc=test_acc)
+
+    final_path = get_final_path(name + ".pkl")
+    documentation_path = os.path.join("examples", "mnist", "readme.md")
+
+    save_model(model, doc_string=final_string, doc_path=documentation_path)
 
 if __name__ == '__main__':
     main()

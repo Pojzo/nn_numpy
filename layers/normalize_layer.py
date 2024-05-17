@@ -10,5 +10,5 @@ class Normalize(Layer):
         self.scale = np.max(inpt)
         return inpt / self.scale
 
-    def backward(self, d_next):
+    def backward(self, d_next, **kwargs):
         return d_next / self.scale, 0, 0
