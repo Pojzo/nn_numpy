@@ -10,3 +10,10 @@ class Layer(ABC):
     @abstractmethod
     def backward(self, outputs):
         pass
+
+    def set_dtype(self, dtype):
+        if hasattr(self, 'weights'):
+            self.weights = self.weights.astype(dtype)
+
+    def get_num_params(self):
+        return 0

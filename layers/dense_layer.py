@@ -44,3 +44,6 @@ class Dense(Layer):
         self.bias -= dl_db * lr
 
         return dl_dx, dl_dw, dl_db
+    
+    def get_num_params(self):
+        return self.shape[0] * self.shape[1]

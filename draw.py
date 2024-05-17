@@ -3,7 +3,7 @@ import numpy as np
 from PIL import Image, ImageTk
 import tensorflow as tf
 
-from examples.mnist import load_model
+from examples.mnist.mnist import load_model
 
 class DigitDrawerApp:
     def __init__(self, root):

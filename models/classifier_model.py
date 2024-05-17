@@ -4,13 +4,21 @@ import numpy as np
 import time
 
 from losses import MSE
+from layers import Flatten, Normalize
 
+"""
+ClassifierModel class that extends the Model class.
+"""
 class ClassifierModel(Model):
     def __init__(self, loss_fn=MSE()):
         super().__init__(loss_fn=loss_fn)
         self.accs = None
         self.losses = None
 
+    """
+    Overrides the backward method of the Model class
+    Computes the loss and accuracy, and backpropagates the gradients
+    """
     def backward(self, one_hot_target, target_argmax):
         pred = self.layers[-1].output
         loss = self.loss_fn(pred, one_hot_target)
@@ -32,11 +40,31 @@ class ClassifierModel(Model):
             self.accs.append(acc)
 
         return loss, acc
+    
+    """
+    Preprocess the data by passing it through the first layers of the model,
+    which are assumed to be Flatten and Normalize layers to avoid having to 
+    compute the outputs of these layers on every forward pass.
+    """
+    def preprocess_data(self, data_x):
+        for layer in self.layers:
+            if isinstance(layer, Flatten) or isinstance(layer, Normalize):
+                data_x = layer.forward(data_x)
+            else:
+                return data_x
+        
+        return data_x
 
+    """
+    Train the model on the given data.
+    """
     def train(self, data_x, data_y, epochs=100, batch_size=32, print_freq=10):
         start_time = time.time()
+
         one_hot_target = np.eye(10)[data_y]
         num_samples = data_x.shape[0]
+
+        data_x = self.preprocess_data(data_x)
         
         for epoch in range(epochs):
             epoch_loss = 0
@@ -65,16 +93,21 @@ class ClassifierModel(Model):
         total_time = time.time() - start_time
         print(f"Finished training for {epochs} epochs: Final Loss - {epoch_loss:.4f}. Acc - {epoch_acc:.4f}. Total time: {total_time:.4f}s")
 
+    """
+    Predict the output of the model for the given input.
+    """
     def predict(self, inpt):
         return super().predict(inpt)
 
+    """
+    Test the model on the given data.
+    """
     def test(self, data_x, data_y):
+        data_x = self.preprocess_data(data_x)
         pred = self(data_x)
         pred_argmax = np.argmax(pred, axis=1)
 
         target_argmax = np.argmax(data_y, axis=1)
-
-        print(pred_argmax.shape, target_argmax.shape)
 
         return np.sum(target_argmax == pred_argmax) / len(pred_argmax)
 
